@@ -10,7 +10,7 @@ if __name__ == "__main__":
 
     parser = argparse.ArgumentParser()
     parser.add_argument('file', type=str,
-                        help='path to the snapshot file')
+                        help='Path to the snapshot file. Usually it is ".pkl" file')
     parser.add_argument('--max_path_length', type=int, default=1000,
                         help='Max length of rollout')
     parser.add_argument('--speedup', type=float, default=1,

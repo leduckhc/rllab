@@ -79,10 +79,13 @@ class DeterministicConvPolicy(Policy, LasagnePowered, Serializable):
         return actions, dict(action_values=values)
 
     def get_action_sym(self, obs_var):
-        if isinstance(self._env_spec.action_space, Discrete):
-            return TT.argmax(self._f_actions)
-        elif isinstance(self._env_spec.action_space, Box):
-            return self._f_actions
-        else:
-            raise NotImplementedError
+        flat_obs_var = obs_var.flatten(ndim=2)
+        return L.get_output(self._output_layer, flat_obs_var, deterministic=True)
+        # values_var = TT.reshape(values_var, (-1,))
+        # if isinstance(self._env_spec.action_space, Discrete):
+        #     return TT.argmax(values_var), dict(action_values=values_var)
+        # elif isinstance(self._env_spec.action_space, Box):
+        #     return values_var, dict(action_values=values_var)
+        # else:
+        #     raise NotImplementedError
 

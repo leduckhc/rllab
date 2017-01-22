@@ -30,7 +30,7 @@ class EpsilonGreedyStrategy(ExplorationStrategy, Serializable):
         """
         Serializable.quick_init(self, locals())
         self.env_spec = env_spec
-        self.esp_start = eps_start
+        self.eps_start = eps_start
         self.eps_final = eps_final
         self.eps_itr_final = eps_itr_final
         self.eps_itr_start = eps_itr_start
@@ -38,7 +38,7 @@ class EpsilonGreedyStrategy(ExplorationStrategy, Serializable):
     @overrides
     def get_action(self, t, observation, policy, **kwargs):
         if t < self.eps_itr_start:
-            eps = self.esp_start
+            eps = self.eps_start
         elif t > self.eps_itr_final:
             eps = self.eps_final
         else:
@@ -48,4 +48,5 @@ class EpsilonGreedyStrategy(ExplorationStrategy, Serializable):
                   1. / (self.eps_itr_final - self.eps_itr_start)
         if random() < eps:
             return self.env_spec.action_space.sample()
-        return policy.get_action(observation)
+        action, _ = policy.get_action(observation)
+        return action

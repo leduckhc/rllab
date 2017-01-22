@@ -49,7 +49,7 @@ class CategoricalConvPolicy(StochasticPolicy, LasagnePowered, Serializable):
                 conv_pads=conv_pads,
                 hidden_sizes=hidden_sizes,
                 hidden_nonlinearity=hidden_nonlinearity,
-                output_nonlinearity=NL.softmax,
+                output_nonlinearity=output_nonlinearity,
                 name="prob_network",
             )
 

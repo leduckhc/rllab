@@ -17,9 +17,9 @@ def wrapped_conv(*args, **kwargs):
     copy = dict(kwargs)
     copy.pop("image_shape", None)
     copy.pop("filter_shape", None)
-    assert copy.pop("filter_flip", False)
+    copy.pop("filter_flip", False)
 
-    input, W, input_shape, get_W_shape = args
+    input, W = args
     if theano.config.device == 'cpu':
         return theano.tensor.nnet.conv2d(*args, **kwargs)
     try:
@@ -35,7 +35,8 @@ def wrapped_conv(*args, **kwargs):
 
 class MLP(LasagnePowered, Serializable):
     def __init__(self, output_dim, hidden_sizes, hidden_nonlinearity,
-                 output_nonlinearity, hidden_W_init=LI.GlorotUniform(), hidden_b_init=LI.Constant(0.),
+                 output_nonlinearity,
+                 hidden_W_init=LI.GlorotUniform(), hidden_b_init=LI.Constant(0.),
                  output_W_init=LI.GlorotUniform(), output_b_init=LI.Constant(0.),
                  name=None, input_var=None, input_layer=None, input_shape=None, batch_norm=False):
 
@@ -279,7 +280,34 @@ class ConvNetwork(object):
                  hidden_nonlinearity=LN.rectify,
                  output_nonlinearity=LN.softmax,
                  name=None, input_var=None):
+        """
+        Network of convolution layers followd by dense layers.
 
+        :param input_shape: input shape, i.e. for 3D images it should be (channels, rows, cols)
+        :type input_shape: tuple
+        :param output_dim: number of output units/neurons
+        :type output_dim: int
+        :param hidden_sizes: list of unit numbers
+        :type hidden_sizes: int-tuple
+        :param conv_filters: number of convolution filters (in literature depth of conv layer)
+        :type conv_filters: tuple
+        :param conv_filter_sizes:
+        :type conv_filter_sizes: tuple
+        :param conv_strides:
+        :param conv_pads:
+        :param hidden_W_init:
+        :param hidden_b_init:
+        :param output_W_init:
+        :param output_b_init:
+        :param hidden_nonlinearity:
+        :param output_nonlinearity:
+        :param name:
+        :param input_var:
+
+        Note
+        ----
+            The trick here is that it flattens the input.
+        """
         if name is None:
             prefix = ""
         else:
@@ -310,7 +338,7 @@ class ConvNetwork(object):
                 pad=pad,
                 nonlinearity=hidden_nonlinearity,
                 name="%sconv_hidden_%d" % (prefix, idx),
-                convolution=wrapped_conv,
+                # convolution=wrapped_conv,
             )
         for idx, hidden_size in enumerate(hidden_sizes):
             l_hid = L.DenseLayer(
