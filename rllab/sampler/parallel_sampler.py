@@ -85,9 +85,11 @@ def _worker_set_policy_params(G, params, scope=None):
     G = _get_scoped_G(G, scope)
     G.policy.set_param_values(params)
 
-def _worker_set_env_params(G,params,scope=None):
+
+def _worker_set_env_params(G, params, scope=None):
     G = _get_scoped_G(G, scope)
     G.env.set_param_values(params)
+
 
 def _worker_collect_one_path(G, max_path_length, scope=None):
     G = _get_scoped_G(G, scope)
@@ -107,7 +109,14 @@ def sample_paths(
     might be greater since all trajectories will be rolled out either until termination or until max_path_length is
     reached
     :param max_path_length: horizon / maximum length of a single trajectory
+    :param env_params:
+    :param scope:
     :return: a list of collected paths
+
+    Parameters
+    ----------
+    scope :
+    env_params :
     """
     singleton_pool.run_each(
         _worker_set_policy_params,

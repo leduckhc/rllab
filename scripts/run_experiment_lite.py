@@ -16,8 +16,6 @@ import pickle as pickle
 import base64
 import joblib
 
-import logging
-
 
 def run_experiment(argv):
     default_log_dir = config.LOG_DIR
@@ -30,7 +28,10 @@ def run_experiment(argv):
     default_exp_name = 'experiment_%s_%s' % (timestamp, rand_id)
     parser = argparse.ArgumentParser()
     parser.add_argument('--n_parallel', type=int, default=1,
-                        help='Number of parallel workers to perform rollouts. 0 => don\'t start any workers')
+                        help='Number of parallel workers to perform rollouts. 0 => don\'t start any workers. '
+                             'If you use GPU then you probably have only one thus set n_parallel=1. Remember, this '
+                             'number is not a number of processors you want to use but number of parallel '
+                             'samplers of rollouts.')
     parser.add_argument(
         '--exp_name', type=str, default=default_exp_name, help='Name of the experiment.')
     parser.add_argument('--log_dir', type=str, default=None,
