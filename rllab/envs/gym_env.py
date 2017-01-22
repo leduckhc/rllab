@@ -73,7 +73,8 @@ class GymEnv(Env, Serializable):
 
         self._observation_space = convert_gym_space(env.observation_space)
         self._action_space = convert_gym_space(env.action_space)
-        self._horizon = env.spec.timestep_limit
+        # self._horizon = env.spec.timestep_limit deprecated since version 0.7.0
+        self._horizon = env.spec.tags.get('wrapper_config.TimeLimit.max_episode_steps')
         self._log_dir = log_dir
         self._force_reset = force_reset
 

@@ -6,7 +6,7 @@ import numpy as np
 import pyprind
 import theano
 import theano.tensor as TT
-from lasagne.updates import rmsprop
+import lasagne
 
 import rllab.misc.logger as logger
 import rllab.plotter as plotter
@@ -16,6 +16,17 @@ from rllab.core.serializable import Serializable
 from rllab.misc import ext
 from rllab.misc import special
 from rllab.sampler import parallel_sampler
+from functools import partial
+
+
+def parse_update_method(update_method, **kwargs):
+    if update_method == 'adam':
+        return partial(lasagne.updates.adam, **ext.compact(kwargs))
+    elif update_method == 'rmsprop':
+        return partial(lasagne.updates.rmsprop, **ext.compact(kwargs))
+    else:
+        raise NotImplementedError
+
 
 class DQN(RLAlgorithm, Serializable):
     """
@@ -39,19 +50,21 @@ class DQN(RLAlgorithm, Serializable):
             policy,
             es,
             scope=None,
-            n_epochs=200,
+            n_epochs=500,
             epoch_length=50000,
             batch_size=32,
             discount=0.99,
-            replay_memory_size=200000,
-            min_replay_memory_size=10000,
+            replay_memory_size=1000000,
+            min_replay_memory_size=50000,
             target_network_update_frequency=10000,
             agent_history_length=4,
             resized_shape=(84,84),
-            eval_max_samples=50000,
-            eval_max_path_length=1000,
-            soft_target_tau=0.01,
+            eval_max_samples=100000,
+            eval_max_path_length=2000,
+            update_method='rmsprop',
+            update_method_kwargs=None,
             plot=False,
+            max_succesive_noop=30,
     ):
         """Deep Q-Network algorithm [1]_ [2]_
         
@@ -76,8 +89,10 @@ class DQN(RLAlgorithm, Serializable):
         eval_max_path_length : int
             Each rollout/path has max lengh. After this we will not restart epoch.
         target_network_update_frequency : int
-        soft_target_tau : float
-            parameters of cur_policy == (1-tau)*cur_policy + tau*old_policy
+        update_method : str
+            'rmsprop' or 'adam'
+        update_method_kwargs : dict
+            kwargs for update method
         plot : bool
 
         Notes
@@ -114,8 +129,12 @@ class DQN(RLAlgorithm, Serializable):
         self.resized_shape = resized_shape
         self.eval_max_samples = eval_max_samples
         self.eval_max_path_length = eval_max_path_length
-        self.soft_target_tau = soft_target_tau
         self.plot = plot
+        if update_method_kwargs is None:
+            update_method_kwargs = dict(
+                learning_rate=0.00025 , rho=0.95, epsilon=1e-2)
+        self.update_method = parse_update_method(update_method, **update_method_kwargs)
+        self.max_succesive_noop = max_succesive_noop
 
         self.qf_loss_averages = []
         self.qs_averages = []
@@ -151,6 +170,7 @@ class DQN(RLAlgorithm, Serializable):
         path_length = 0
         path_return = 0
         terminal = False
+        succesive_noop = 0
 
         obs = self.env.reset()
 
@@ -170,6 +190,14 @@ class DQN(RLAlgorithm, Serializable):
 
                 # Execute policy
                 action = self.es.get_action(itr, obs, policy=self.policy)
+                if action == 0: succesive_noop += 1
+                else: succesive_noop = 0
+
+                if succesive_noop == self.max_succesive_noop:
+                    # exclude noop operations
+                    succesive_noop = 0
+                    action = np.random.randint(1, self.env.action_space.n)
+
                 next_obs, reward, terminal, env_info = self.env.step(action)
                 path_length += 1
                 path_return += reward
@@ -182,7 +210,7 @@ class DQN(RLAlgorithm, Serializable):
                     self.do_training(itr, batch)
                     update_freq_itr += 1
                     if update_freq_itr % self.target_network_update_frequency == 0:
-                        self.policy.set_param_values(self.opt_info['target_policy'].get_param_values())
+                        self.opt_info['target_policy'].set_param_values(self.policy.get_param_values())
 
                 obs = next_obs
                 itr += 1
@@ -227,12 +255,8 @@ class DQN(RLAlgorithm, Serializable):
         targets = rewards +  self.discount * (1. - terminals) * target_qvalues
         flat_observations = self.env.observation_space.flatten_n(observations)
 
-        # f_train_policy updates the target_policy
+        # f_train_policy updates the parameters of self.policy
         qf_loss, qvalues = f_train_policy(flat_observations, actions, targets)
-
-        target_policy.set_param_values(
-            target_policy.get_param_values() * (1.0 - self.soft_target_tau) +
-            self.policy.get_param_values() * self.soft_target_tau)
 
         # store the values for logging
         self.qf_loss_averages.append(qf_loss)
@@ -256,8 +280,7 @@ class DQN(RLAlgorithm, Serializable):
 
         loss_var = TT.mean(TT.square(target_var - qval_var))
         params = self.policy.get_params(trainable=True)
-        updates = rmsprop(loss_var, params,
-                          learning_rate=0.00025 , rho=0.95, epsilon=1e-2) #epsilon=1e-6
+        updates = self.update_method(loss_var, params)
 
         # debugging functions
         # also uncomment mode=theano.compile.MonitorMode(pre_func=inspect_inputs, post_func=inspect_outputs)
@@ -311,12 +334,6 @@ class DQN(RLAlgorithm, Serializable):
                                   np.min(self.es_path_returns))
             logger.record_tabular('AverageEsPathLength',
                                   np.mean(self.es_path_length))
-            logger.record_tabular('StdEsPathLength',
-                                  np.std(self.es_path_length))
-            logger.record_tabular('MaxEsPathLength',
-                                  np.max(self.es_path_length))
-            logger.record_tabular('MinEsPathLength',
-                                  np.min(self.es_path_length))
 
         logger.record_tabular('AverageQLoss', np.mean(self.qf_loss_averages))
 

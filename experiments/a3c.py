@@ -12,6 +12,82 @@ from rllab.misc import logger
 from rllab.plotter import plotter
 from rllab.sampler import parallel_sampler
 from rllab.sampler.stateful_pool import singleton_pool, ProgBarCounter
+from rllab.algos.base import RLAlgorithm
+from rllab.core.serializable import Serializable
+from rllab.misc import ext
+from rllab.plotter import plotter
+from rllab.sampler import parallel_sampler
+from rllab.sampler.stateful_pool import singleton_pool
+
+
+def optimize_policy(sample_data):
+    inputs = ext.extract(
+        sample_data,
+        "observations", "actions", "advantages"
+    )
+
+
+def _train_worker(G, g_counter, env, opt_info, target_net, t_max, discount, lock):
+    target_policy = target_net["target_policy"]
+    target_vfunc = target_net["target_vfunc"]
+    policy = pickle.loads(pickle.loads(target_policy))
+    baseline = pickle.loads(pickle.loads(target_vfunc))
+
+    t_local = 1
+    obs = env.reset()
+    observations = []
+    actions = []
+    rewards = []
+    paths = []
+    while True:
+        t_start = t_local
+        done = False
+        while True:
+            action, _ = policy.get_action(obs)
+            next_obs, reward, done, info = obs.step(action)
+            observations.append(obs)
+            actions.append(action)
+            rewards.append(reward)
+            obs = next_obs if not done else env.reset()
+            t_local += 1
+            with lock:
+                g_counter.value += 1
+            if done or t_local - t_start == t_max:
+                break
+
+        # make it not expanding
+        observations = observations[-t_max:]
+        actions = actions[-t_max:]
+        rewards = rewards[-t_max:]
+
+        path = dict(
+            observations=np.array(observations),
+            actions=np.array(actions),
+            rewards=np.array(rewards)
+        )
+
+        path_baseline = baseline.predict(path)
+        advantages = []
+        returns = []
+        return_so_far = 0 if done else path_baseline[-1:]
+        for t in range(len(rewards) - 1, -1, -1):
+            return_so_far = rewards[t] + discount * return_so_far
+            returns.append(return_so_far)
+            advantage = return_so_far - path_baseline[t]
+            advantages.append(advantage)
+        # The advantages are stored backwards in time, so we need to revert it
+        advantages = np.array(advantages[::-1])
+        # The returns are stored backwards in time, so we need to revert it
+        returns = returns[::-1]
+        # normalize advantages
+        advantages = (advantages - np.mean(advantages)) / (np.std(advantages) + 1e-8)
+
+        path["advantages"] = advantages
+        path["returns"] = returns
+        paths.append(path)
+
+        optimize_policy(path)
+        baseline.fit(path)
 
 
 class A3C(RLAlgorithm, Serializable):
@@ -46,8 +122,13 @@ class A3C(RLAlgorithm, Serializable):
         self.vfunc_update_method = vfunc_update_method
         self.policy_update_method = policy_update_method
         self.scale_reward = scale_reward
+        self.scale_reward = scale_reward
 
         self.opt_info = None
+
+
+        self.opt_info = None
+        self.target_net = None
 
     def start_worker(self):
         parallel_sampler.populate_task(self.env, self.policy, self.scope)
@@ -87,8 +168,6 @@ class A3C(RLAlgorithm, Serializable):
                         break
                     pbar.inc(g_counter.value - last_value)
                     last_value = g_counter.value
-
-
         self.terminate_task()
 
     def init_opt(self):
@@ -151,12 +230,10 @@ class A3C(RLAlgorithm, Serializable):
         self.opt_info = dict(
             f_train_vfunc=f_train_vfunc,
             f_train_policy=f_train_policy,
-            target_policy=policy,
-            target_vfunc=vfunc
         )
 
     def evaluate(self, value):
         pass
 
     def terminate_task(self):
-        parallel_sampler.terminate_task(self.scope)
+        pass

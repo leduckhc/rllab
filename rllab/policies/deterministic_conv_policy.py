@@ -52,14 +52,14 @@ class DeterministicConvPolicy(Policy, LasagnePowered, Serializable):
             outputs=L.get_output(network.output_layer, deterministic=True)
         )
 
-        LasagnePowered.__init__(self, [network.output_layer])
         super(DeterministicConvPolicy, self).__init__(env_spec)
+        LasagnePowered.__init__(self, [network.output_layer])
 
     def get_action(self, observation):
         flat_obs = self.observation_space.flatten(observation)
         values = self._f_actions([flat_obs])[0]
         if isinstance(self._env_spec.action_space, Discrete):
-            # actually index of an action
+            # actually index of the action
             action = np.argmax(values)
         elif isinstance(self._env_spec.action_space, Box):
             action = values

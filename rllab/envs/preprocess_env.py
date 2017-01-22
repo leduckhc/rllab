@@ -1,11 +1,11 @@
 import cv2
 import numpy as np
+
 from rllab.core.serializable import Serializable
 from rllab.envs.base import Step
 from rllab.envs.proxy_env import ProxyEnv
 from rllab.misc.overrides import overrides
 from rllab.spaces import Box
-
 
 
 class PreprocessEnv(ProxyEnv, Serializable):

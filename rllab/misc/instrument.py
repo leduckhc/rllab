@@ -380,6 +380,8 @@ def run_experiment_lite(
         certain environment flags
     :param sync_s3_pkl: Whether to sync pkl files during execution of the experiment (they will always be synced at
         the end of the experiment)
+    :param sync_s3_log: Whether to sync log files during execution of the experiment (they will always be synced at
+        the end of the experiment)
     :param confirm_remote: Whether to confirm before launching experiments remotely
     :param terminate_machine: Whether to terminate machine after experiment finishes. Only used when using
         mode="ec2". This is useful when one wants to debug after an experiment finishes abnormally.
