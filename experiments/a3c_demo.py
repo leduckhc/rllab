@@ -47,6 +47,9 @@ algo = A3C(
     epoch_length=1000
 )
 
+<<<<<<< 7827c2e359fc5740bc4447840d9d73d7ee235a4c
 algo.train()
+=======
+>>>>>>> Changes:
 
 
