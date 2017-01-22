@@ -113,7 +113,7 @@ class StatefulPool(object):
 
         stateful_pool.run_collect(collect_once, threshold=3) # => ['a', 'a', 'a']
 
-        :param collector:
+        :param collect_once:
         :param threshold:
         :return:
         """

@@ -260,7 +260,7 @@ class DDPG(RLAlgorithm):
                 self.update_plot()
                 if self.pause_for_plot:
                     input("Plotting evaluation run: Press Enter to "
-                              "continue...")
+                          "continue...")
         self.env.terminate()
         self.policy.terminate()
 

@@ -1,7 +1,9 @@
+import theano
 import numpy as np
 import time
 from rllab.core.serializable import Serializable
 from rllab.misc.ext import extract
+
 
 
 def center_advantages(advantages):
@@ -35,14 +37,14 @@ class ReplayPool(Serializable):
         """Construct a ReplayPool.
 
         Arguments:
-            observation_shape - tuple indicating the shape of the observation
-            action_dim - dimension of the action
-            size - capacity of the replay pool
-            observation_dtype - ...
-            action_dtype - ...
-            concat_observations - whether to concat the past few observations
+            observation_shape : tuple indicating the shape of the observation
+            action_dim : dimension of the action
+            max_steps : capacity of the replay pool
+            observation_dtype : observation dtype
+            action_dtype : action dtype
+            concat_observations : whether to concat the past few observations
             as a single one, so as to ensure the Markov property
-            concat_length - length of the concatenation
+            concat_length : length of the concatenation
         """
 
         self.observation_shape = observation_shape
@@ -156,7 +158,7 @@ class ReplayPool(Serializable):
 
             concat_state = np.empty(
                 (self.concat_length,) + self.observation_shape,
-                dtype=floatX
+                dtype=theano.config.floatX
             )
             concat_state[0:self.concat_length - 1] = \
                 self.observations.take(indexes, axis=0, mode='wrap')
@@ -180,7 +182,7 @@ class ReplayPool(Serializable):
             (batch_size, self.action_dim),
             dtype=self.action_dtype
         )
-        rewards = np.zeros((batch_size,), dtype=floatX)
+        rewards = np.zeros((batch_size,), dtype=theano.config.floatX)
         terminals = np.zeros((batch_size,), dtype='bool')
         if self.extras is not None:
             extras = np.zeros(
@@ -243,7 +245,7 @@ class ReplayPool(Serializable):
             next_observations[count] = self.observations.take(
                 transition_indices, axis=0, mode='wrap')
             next_actions[count] = self.actions.take(
-                transition_indices, axis=0, mode='wrap')
+                end_index+1, axis=0, mode='wrap')
 
             count += 1
 
@@ -288,7 +290,7 @@ def simple_tests():
         print("S", dataset.observations)
         print("A", dataset.actions)
         print("R", dataset.rewards)
-        print("T", dataset.terminal)
+        print("T", dataset.terminals)
         print("SIZE", dataset.size)
         print()
     print("LAST CONCAT STATE", dataset.last_concat_state())
@@ -400,10 +402,11 @@ def test_memory_usage_ok():
 
 
 def main():
+    trivial_tests()
+    simple_tests()
     speed_tests()
     # test_memory_usage_ok()
     max_size_tests()
-    simple_tests()
 
 
 if __name__ == "__main__":

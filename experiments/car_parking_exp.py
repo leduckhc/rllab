@@ -1,25 +1,15 @@
-import sys
-from collections import OrderedDict
-
-import gym
-
 from rllab.algos.cem import CEM
 from rllab.algos.cma_es import CMAES
 from rllab.algos.ddpg import DDPG
 from rllab.algos.erwr import ERWR
-from rllab.algos.power import POWER
 from rllab.algos.ppo import PPO
 from rllab.algos.reps import REPS
 from rllab.algos.tnpg import TNPG
-from rllab.algos.trpo import TRPO
 from rllab.algos.vpg import VPG
 from rllab.baselines.linear_feature_baseline import LinearFeatureBaseline
-from rllab.baselines.zero_baseline import ZeroBaseline
 from rllab.envs.box2d.car_parking_env import CarParkingEnv
-from rllab.envs.box2d.cartpole_env import CartpoleEnv
 from rllab.envs.normalized_env import normalize
 from rllab.exploration_strategies.ou_strategy import OUStrategy
-from rllab.misc.ext import lazydict
 from rllab.misc.instrument import stub, run_experiment_lite
 from rllab.policies.deterministic_mlp_policy import DeterministicMLPPolicy
 from rllab.policies.gaussian_mlp_policy import GaussianMLPPolicy
@@ -27,8 +17,8 @@ from rllab.q_functions.continuous_mlp_q_function import ContinuousMLPQFunction
 
 stub(globals())
 
-for (algo_cls, algo_name) in zip([VPG, ERWR, POWER, TNPG, PPO, REPS, CEM],
-                                 ['VPG', 'ERWR', 'POWER', 'TNPG', 'PPO', 'REPS', 'CEM']):
+for (algo_cls, algo_name) in zip([VPG, ERWR, TNPG, PPO, REPS, CEM],
+                                 ['VPG', 'ERWR', 'TNPG', 'PPO', 'REPS', 'CEM']):
     env = normalize(CarParkingEnv())
     policy = GaussianMLPPolicy(env_spec=env.spec, hidden_sizes=(32, 32))
     baseline = LinearFeatureBaseline(env_spec=env.spec)
@@ -43,7 +33,6 @@ for (algo_cls, algo_name) in zip([VPG, ERWR, POWER, TNPG, PPO, REPS, CEM],
     algos = {
         VPG: common_batch_algo_args,
         ERWR: common_batch_algo_args,
-        POWER: common_batch_algo_args,
         TNPG: common_batch_algo_args,
         PPO: common_batch_algo_args,
         REPS: common_batch_algo_args,

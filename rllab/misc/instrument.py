@@ -361,10 +361,11 @@ def run_experiment_lite(
         **kwargs):
     """
     Serialize the stubbed method call and run the experiment using the specified mode.
+
     :param stub_method_call: A stubbed method call.
     :param script: The name of the entrance point python script
     :param mode: Where & how to run the experiment. Should be one of "local", "local_docker", "ec2",
-    and "lab_kube".
+        and "lab_kube".
     :param dry: Whether to do a dry-run, which only prints the commands without executing them.
     :param exp_prefix: Name prefix for the experiments
     :param docker_image: name of the docker image. Ignored if using local mode.
@@ -373,12 +374,12 @@ def run_experiment_lite(
     :param kwargs: All other parameters will be passed directly to the entrance python script.
     :param variant: If provided, should be a dictionary of parameters
     :param use_gpu: Whether the launched task is running on GPU. This triggers a few configuration changes including
-    certain environment flags
+        certain environment flags
     :param sync_s3_pkl: Whether to sync pkl files during execution of the experiment (they will always be synced at
-    the end of the experiment)
+        the end of the experiment)
     :param confirm_remote: Whether to confirm before launching experiments remotely
     :param terminate_machine: Whether to terminate machine after experiment finishes. Only used when using
-    mode="ec2". This is useful when one wants to debug after an experiment finishes abnormally.
+        mode="ec2". This is useful when one wants to debug after an experiment finishes abnormally.
     :param periodic_sync: Whether to synchronize certain experiment files periodically during execution.
     :param periodic_sync_interval: Time interval between each periodic sync, in seconds.
     """

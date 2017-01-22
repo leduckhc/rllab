@@ -3,9 +3,7 @@ import gym.wrappers
 import gym.envs
 import gym.spaces
 from gym.monitoring import monitor_manager
-from gym.wrappers.monitoring import _Monitor
 import os
-import os.path as osp
 from rllab.envs.base import Env, Step
 from rllab.core.serializable import Serializable
 from rllab.spaces.box import Box
@@ -46,7 +44,7 @@ class NoVideoSchedule(object):
 
 class GymEnv(Env, Serializable):
     def __init__(self, env_name, record_video=True, video_schedule=None, log_dir=None, record_log=True,
-                 force_reset=False):
+                 force_reset=True):
         if log_dir is None:
             if logger.get_snapshot_dir() is None:
                 logger.log("Warning: skipping Gym environment monitoring since snapshot_dir not configured.")
