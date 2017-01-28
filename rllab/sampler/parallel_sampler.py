@@ -109,7 +109,7 @@ def sample_paths(
     might be greater since all trajectories will be rolled out either until termination or until max_path_length is
     reached
     :param max_path_length: horizon / maximum length of a single trajectory
-    :param env_params:
+    :param env_params: optional
     :param scope:
     :return: a list of collected paths
 

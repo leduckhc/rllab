@@ -175,8 +175,8 @@ class DQN(RLAlgorithm, Serializable):
                 path_return += reward
                 replay_memory.add_sample(obs[-1], action, np.clip(reward, -1.0, +1.0), terminal)
 
-                # Training/learning phase starts after some steps.
-                # Read the paper for details.
+                # Training/learning phase does not start directly.
+                # It lets the algo to explore the env. Read the paper for details.
                 if len(replay_memory) >= self.min_replay_memory_size:
                     batch = replay_memory.random_batch(self.batch_size)
                     self.do_training(itr, batch)
@@ -202,7 +202,7 @@ class DQN(RLAlgorithm, Serializable):
         self.shutdown_worker()
 
     def do_training(self, itr, samples):
-        """Update the policy and save the values for logging.
+        """Update the policy and save the losses and vqalues for logging.
 
         Parameters
         ----------
@@ -259,7 +259,7 @@ class DQN(RLAlgorithm, Serializable):
         updates = rmsprop(loss_var, params,
                           learning_rate=0.00025 , rho=0.95, epsilon=1e-2) #epsilon=1e-6
 
-        # debuggin functions
+        # debugging functions
         # also uncomment mode=theano.compile.MonitorMode(pre_func=inspect_inputs, post_func=inspect_outputs)
         # def inspect_inputs(i, node, fn):
         #     print(i, node, "input(s) shape(s):", [input[0].shape for input in fn.inputs],end='')
@@ -278,7 +278,6 @@ class DQN(RLAlgorithm, Serializable):
             f_train_policy = f_train_policy,
             target_policy = target_policy
         )
-
 
     def evaluate(self, epoch, pool):
         logger.log('Collecting samples for evaluation')
@@ -335,14 +334,6 @@ class DQN(RLAlgorithm, Serializable):
 
         self.es_path_length=[]
         self.es_path_returns=[]
-
-        # logger.log("Generating plots of networks")
-        # self.policy.visualize_conv_weight(epoch)
-        # best_return_ind = np.argmax(returns)
-        # some_obs_length = len(paths[best_return_ind]['observations'])
-        # some_obs_ind = np.linspace(0, some_obs_length, 10, endpoint=False, dtype=np.intp)
-        # some_obs = paths[best_return_ind]['observations'][some_obs_ind]
-        # self.policy.visualize_conv_activation(some_obs, epoch)
 
     def update_plot(self):
         if self.plot:
