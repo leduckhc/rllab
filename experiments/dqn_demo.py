@@ -117,23 +117,22 @@ run_experiment_lite(
 from rllab.misc.instrument import run_experiment_lite, stub
 from rllab.policies.deterministic_conv_policy import DeterministicConvPolicy
 
-if __name__ == '__main__':
-    stub(globals())
+env_name = 'SpaceInvaders-v0'
+n_epochs = 200
+parser = argparse.ArgumentParser()
+parser.add_argument('--env', type=str, default=env_name,
+                    help='Name of the environment. Deefault value is SpaceInvaders-v0')
+parser.add_argument('--n_epochs', type=int, default=n_epochs,
+                    help='Number of epochs. Default value is 200')
+args = parser.parse_args(sys.argv[1:])
 
-    env_name = 'SpaceInvaders-v0'
-    n_epochs = 200
-    parser = argparse.ArgumentParser()
-    parser.add_argument('--env', type=str, default=env_name,
-                        help='Name of the environment. Deefault value is SpaceInvaders-v0')
-    parser.add_argument('--n_epochs', type=int, default=n_epochs, help='Number of epochs. Default value is 200')
-    args = parser.parse_args(sys.argv[1:])
-
-    if args.env:
-        env_name = args.env
-    if args.n_epochs:
-        n_epochs = args.n_epochs
+if args.env:
+    env_name = args.env
+if args.n_epochs:
+    n_epochs = args.n_epochs
 
 
+def run_task(*_):
     agent_history_length = 4
     resized_shape = (84, 84)
 
@@ -183,22 +182,23 @@ if __name__ == '__main__':
         policy,
         es,
         n_epochs=n_epochs,
-        epoch_length=1000, #1000,
+        epoch_length=1000,  # 1000,
         batch_size=32,
         discount=0.99,
-        replay_memory_size=20000, #20000 #10^5=11gb
-        min_replay_memory_size=5000, #2000, #50000
-        target_network_update_frequency=500, #500, #10000,
+        replay_memory_size=20000,  # 20000 #10^5=11gb
+        min_replay_memory_size=5000,  # 2000, #50000
+        target_network_update_frequency=500,  # 500, #10000,
         agent_history_length=agent_history_length,
         resized_shape=resized_shape,
-        eval_max_samples=5000,#10000,#50000,
-        eval_max_path_length=500,#1000,s
+        eval_max_samples=5000,  # 10000,#50000,
+        eval_max_path_length=500,  # 1000,s
         update_method='rmsprop',
         update_method_kwargs=dict(
-            learning_rate=0.00025 , rho=0.95, epsilon=1e-2),
+            learning_rate=0.00025, rho=0.95, epsilon=1e-2),
         # plot=True,
     )
 
+<<<<<<< 33d4b7a59e6eda50a33af9b4bbf6046776b88aaa
     run_experiment_lite(
         algo.train(),
         exp_prefix=env_name,
@@ -215,3 +215,23 @@ if __name__ == '__main__':
         # plot=True,
     )
 >>>>>>> Changes:
+=======
+    algo.train()
+
+
+run_experiment_lite(
+    run_task,
+    exp_prefix=env_name,
+    exp_name="dqn",
+    # Number of parallel workers for sampling.
+    n_parallel=1,
+    # Only keep the snapshot parameters for the last iteration
+    snapshot_mode="all",
+    mode="local",
+    use_gpu=True,  # TODO True
+    # Specifies the seed for the experiment. If this is not provided, a random seed
+    # will be used
+    seed=1,
+    # plot=True,
+)
+>>>>>>> small fix dqn_demo
