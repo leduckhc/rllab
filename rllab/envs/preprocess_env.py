@@ -7,15 +7,13 @@ from rllab.misc.overrides import overrides
 from rllab.spaces import Box
 
 
-
 class PreprocessEnv(ProxyEnv, Serializable):
     """
     Transform an observation to grayscale and resize it. Yet works for Atari games
     """
 
-   def __init__(self, env, new_shape=(84, 84), insert_extra_one_to_shape=True):
-        assert isinstance(env.observation_space, Box)
-        # element on last index is 3 is BGR or RGB
+    def __init__(self, env, new_shape=(84, 84), insert_extra_one_to_shape=True):
+        assert isinstance(env.observation_space, Box)  # element on last index is 3 is BGR or RGB
         assert len(env.observation_space.shape) == 3 and env.observation_space.shape[-1] == 3
 
         super(PreprocessEnv, self).__init__(env)
@@ -23,6 +21,7 @@ class PreprocessEnv(ProxyEnv, Serializable):
         self.new_shape = new_shape
         self.range = np.max(env.observation_space.high - env.observation_space.low)
         self.insert_extra_one_to_shape = insert_extra_one_to_shape
+
 
     def preprocess(self, obs):
         # scale down game image
@@ -32,7 +31,7 @@ class PreprocessEnv(ProxyEnv, Serializable):
 
     @property
     def observation_space(self):
-         if self.insert_extra_one_to_shape:
+        if self.insert_extra_one_to_shape:
             # we need (1,) + self.new_shape because new_shape==(84,84)
             return Box(0, 1, shape=(1,) + self.new_shape)
         else:

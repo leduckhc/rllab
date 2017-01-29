@@ -91,6 +91,10 @@ class DQN(RLAlgorithm, Serializable):
         target_network_update_frequency : int
         soft_target_tau : float
             parameters of cur_policy == (1-tau)*cur_policy + tau*old_policy
+        update_method : str
+            'rmsprop' or 'adam'
+        update_method_kwargs : dict
+            kwargs for update method
         plot : bool
 
         Notes
