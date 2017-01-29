@@ -5,6 +5,7 @@ import theano.tensor as TT
 import numpy as np
 
 from experiments.a3c_lib import *
+<<<<<<< 719b483bc67dd49a324bd66fd805c73ae6599fee
 from rllab.algos.base import RLAlgorithm
 from rllab.core.serializable import Serializable
 from rllab.misc import ext
@@ -12,11 +13,15 @@ from rllab.misc import logger
 from rllab.plotter import plotter
 from rllab.sampler import parallel_sampler
 from rllab.sampler.stateful_pool import singleton_pool, ProgBarCounter
+=======
+>>>>>>> merge with master
 from rllab.algos.base import RLAlgorithm
 from rllab.core.serializable import Serializable
 from rllab.misc import ext
+from rllab.misc import logger
 from rllab.plotter import plotter
 from rllab.sampler import parallel_sampler
+<<<<<<< 719b483bc67dd49a324bd66fd805c73ae6599fee
 from rllab.sampler.stateful_pool import singleton_pool
 
 
@@ -88,6 +93,9 @@ def _train_worker(G, g_counter, env, opt_info, target_net, t_max, discount, lock
 
         optimize_policy(path)
         baseline.fit(path)
+=======
+from rllab.sampler.stateful_pool import singleton_pool, ProgBarCounter
+>>>>>>> merge with master
 
 
 class A3C(RLAlgorithm, Serializable):
@@ -121,6 +129,7 @@ class A3C(RLAlgorithm, Serializable):
         self.policy_weight_decay = policy_weight_decay
         self.vfunc_update_method = vfunc_update_method
         self.policy_update_method = policy_update_method
+<<<<<<< 719b483bc67dd49a324bd66fd805c73ae6599fee
         self.scale_reward = scale_reward
         self.scale_reward = scale_reward
 
@@ -129,6 +138,11 @@ class A3C(RLAlgorithm, Serializable):
 
         self.opt_info = None
         self.target_net = None
+=======
+        self.scale_reward = scale_reward
+
+        self.opt_info = None
+>>>>>>> merge with master
 
     def start_worker(self):
         parallel_sampler.populate_task(self.env, self.policy, self.scope)
@@ -168,6 +182,11 @@ class A3C(RLAlgorithm, Serializable):
                         break
                     pbar.inc(g_counter.value - last_value)
                     last_value = g_counter.value
+<<<<<<< 719b483bc67dd49a324bd66fd805c73ae6599fee
+=======
+
+
+>>>>>>> merge with master
         self.terminate_task()
 
     def init_opt(self):
@@ -230,10 +249,19 @@ class A3C(RLAlgorithm, Serializable):
         self.opt_info = dict(
             f_train_vfunc=f_train_vfunc,
             f_train_policy=f_train_policy,
+<<<<<<< 719b483bc67dd49a324bd66fd805c73ae6599fee
+=======
+            target_policy=policy,
+            target_vfunc=vfunc
+>>>>>>> merge with master
         )
 
     def evaluate(self, value):
         pass
 
     def terminate_task(self):
+<<<<<<< 719b483bc67dd49a324bd66fd805c73ae6599fee
         pass
+=======
+        parallel_sampler.terminate_task(self.scope)
+>>>>>>> merge with master
