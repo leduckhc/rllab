@@ -76,19 +76,19 @@ def run_task(*_):
         policy,
         es,
         n_epochs=n_epochs,
-        epoch_length=1000,  # 1000,
+        epoch_length=1000, #1000,
         batch_size=32,
         discount=0.99,
-        replay_memory_size=20000,  # 20000 #10^5=11gb
-        min_replay_memory_size=5000,  # 2000, #50000
-        target_network_update_frequency=500,  # 500, #10000,
+        replay_memory_size=20000, #20000 #10^5=11gb
+        min_replay_memory_size=5000, #2000, #50000
+        target_network_update_frequency=500, #500, #10000,
         agent_history_length=agent_history_length,
         resized_shape=resized_shape,
-        eval_max_samples=5000,  # 10000,#50000,
-        eval_max_path_length=500,  # 1000,s
+        eval_max_samples=5000,#10000,#50000,
+        eval_max_path_length=500,#1000,s
         update_method='rmsprop',
         update_method_kwargs=dict(
-            learning_rate=0.00025, rho=0.95, epsilon=1e-2),
+            learning_rate=0.00025 , rho=0.95, epsilon=1e-2),
         # plot=True,
     )
 

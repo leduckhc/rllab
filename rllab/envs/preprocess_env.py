@@ -13,7 +13,8 @@ class PreprocessEnv(ProxyEnv, Serializable):
     """
 
     def __init__(self, env, new_shape=(84, 84), insert_extra_one_to_shape=True):
-        assert isinstance(env.observation_space, Box)  # element on last index is 3 is BGR or RGB
+        assert isinstance(env.observation_space, Box)
+        # element on last index is 3 is BGR or RGB
         assert len(env.observation_space.shape) == 3 and env.observation_space.shape[-1] == 3
 
         super(PreprocessEnv, self).__init__(env)
