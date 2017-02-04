@@ -118,6 +118,7 @@ parser.add_argument('file', type=str,
                     help='Path to the snapshot file. Usually it is ".pkl" file')
 parser.add_argument('--env', type=str, help='Name of the environemtn')
 parser.add_argument('--visualize_conv', type=bool, default=True, help='Visualize convolution layer')
+parser.add_argument('--max_path_length', type=int, default=np.inf, help='Maximal path length ')
 args = parser.parse_args()
 
 analysis_log_dir = os.path.join('analysis', args.env)

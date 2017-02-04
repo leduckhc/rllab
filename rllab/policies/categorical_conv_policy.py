@@ -17,13 +17,13 @@ import lasagne.nonlinearities as NL
 class CategoricalConvPolicy(StochasticPolicy, LasagnePowered, Serializable):
     def __init__(
             self,
-            name,
             env_spec,
             conv_filters, conv_filter_sizes, conv_strides, conv_pads,
             hidden_sizes=[],
             hidden_nonlinearity=NL.rectify,
             output_nonlinearity=NL.softmax,
             prob_network=None,
+            name=None,
     ):
         """
         :param env_spec: A spec for the mdp.
@@ -40,6 +40,8 @@ class CategoricalConvPolicy(StochasticPolicy, LasagnePowered, Serializable):
         self._env_spec = env_spec
 
         if prob_network is None:
+            if not name:
+                name = "categorical_conv_prob_network"
             prob_network = ConvNetwork(
                 input_shape=env_spec.observation_space.shape,
                 output_dim=env_spec.action_space.n,
@@ -50,7 +52,7 @@ class CategoricalConvPolicy(StochasticPolicy, LasagnePowered, Serializable):
                 hidden_sizes=hidden_sizes,
                 hidden_nonlinearity=hidden_nonlinearity,
                 output_nonlinearity=output_nonlinearity,
-                name="prob_network",
+                name=name,
             )
 
         self._l_prob = prob_network.output_layer

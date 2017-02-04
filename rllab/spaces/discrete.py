@@ -21,7 +21,7 @@ class Discrete(Space):
 
     def contains(self, x):
         x = np.asarray(x)
-        return x.shape == () and x.dtype.kind == 'i' and x >= 0 and x < self.n
+        return x.shape == () and x.dtype.kind == 'i' and 0 <= x < self.n
 
     def __repr__(self):
         return "Discrete(%d)" % self.n

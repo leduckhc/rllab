@@ -1,9 +1,11 @@
+import lasagne.layers as L
+import lasagne.nonlinearities as NL
+
 from rllab.core.lasagne_powered import LasagnePowered
 from rllab.core.network import ConvNetwork
 from rllab.core.serializable import Serializable
+from rllab.misc import ext
 from rllab.v_functions.base import VFunction
-import lasagne.layers as L
-import lasagne.nonlinearities as NL
 
 
 class ContinuousConvVFunction(VFunction, LasagnePowered, Serializable):
@@ -48,11 +50,9 @@ class ContinuousConvVFunction(VFunction, LasagnePowered, Serializable):
 
         LasagnePowered.__init__(self, [network.output_layer])
 
-
     def get_vval(self, observation, **kwargs):
-        flat_obs = self.observation_space.flatten(observation)
+        flat_obs = self._env_spec.observation_space.flatten(observation)
         return self._f_values([flat_obs])[0]
-
 
     def get_vval_sym(self, obs_var, **kwargs):
         flat_obs_var = obs_var.flatten(ndim=2)

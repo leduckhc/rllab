@@ -1,5 +1,3 @@
-
-
 import lasagne.layers as L
 import lasagne.nonlinearities as LN
 import lasagne.init as LI
@@ -9,7 +7,6 @@ from rllab.misc import ext
 from rllab.core.lasagne_layers import OpLayer
 from rllab.core.lasagne_powered import LasagnePowered
 from rllab.core.serializable import Serializable
-
 import numpy as np
 
 
@@ -338,7 +335,8 @@ class ConvNetwork(object):
                 pad=pad,
                 nonlinearity=hidden_nonlinearity,
                 name="%sconv_hidden_%d" % (prefix, idx),
-                # convolution=wrapped_conv,
+                W=hidden_W_init,
+                b=hidden_b_init,
             )
         for idx, hidden_size in enumerate(hidden_sizes):
             l_hid = L.DenseLayer(

@@ -1,12 +1,13 @@
 from __future__ import print_function
 
 import pickle
+from functools import partial
 
+import lasagne
 import numpy as np
 import pyprind
 import theano
 import theano.tensor as TT
-import lasagne
 
 import rllab.misc.logger as logger
 import rllab.plotter as plotter
@@ -16,7 +17,6 @@ from rllab.core.serializable import Serializable
 from rllab.misc import ext
 from rllab.misc import special
 from rllab.sampler import parallel_sampler
-from functools import partial
 
 
 def parse_update_method(update_method, **kwargs):
@@ -58,13 +58,15 @@ class DQN(RLAlgorithm, Serializable):
             min_replay_memory_size=50000,
             target_network_update_frequency=10000,
             agent_history_length=4,
-            resized_shape=(84,84),
+            resized_shape=(84, 84),
             eval_max_samples=100000,
             eval_max_path_length=2000,
             update_method='rmsprop',
             update_method_kwargs=None,
             plot=False,
             max_succesive_noop=30,
+            clip_gradient=1.0,
+            max_path_length=400,
     ):
         """Deep Q-Network algorithm [1]_ [2]_
         
@@ -132,9 +134,11 @@ class DQN(RLAlgorithm, Serializable):
         self.plot = plot
         if update_method_kwargs is None:
             update_method_kwargs = dict(
-                learning_rate=0.00025 , rho=0.95, epsilon=1e-2)
+                learning_rate=0.00025, rho=0.95, epsilon=1e-2)
         self.update_method = parse_update_method(update_method, **update_method_kwargs)
         self.max_succesive_noop = max_succesive_noop
+        self.clip_gradient = clip_gradient
+        self.max_path_length = max_path_length
 
         self.qf_loss_averages = []
         self.qs_averages = []
@@ -188,29 +192,31 @@ class DQN(RLAlgorithm, Serializable):
                     path_length = 0
                     path_return = 0
 
-                # Execute policy
+                # Get action
                 action = self.es.get_action(itr, obs, policy=self.policy)
                 if action == 0: succesive_noop += 1
                 else: succesive_noop = 0
-
-                if succesive_noop == self.max_succesive_noop:
+                if succesive_noop >= self.max_succesive_noop:
                     # exclude noop operations
                     succesive_noop = 0
                     action = np.random.randint(1, self.env.action_space.n)
 
+                # Simulate in the env
                 next_obs, reward, terminal, env_info = self.env.step(action)
                 path_length += 1
                 path_return += reward
+                if path_length >= self.max_path_length:
+                    terminal = True
                 replay_memory.add_sample(obs[-1], action, np.clip(reward, -1.0, +1.0), terminal)
 
-                # Training/learning phase does not start directly.
+                # Training phase does not start directly.
                 # It lets the algo to explore the env. Read the paper for details.
                 if len(replay_memory) >= self.min_replay_memory_size:
                     batch = replay_memory.random_batch(self.batch_size)
                     self.do_training(itr, batch)
-                    update_freq_itr += 1
                     if update_freq_itr % self.target_network_update_frequency == 0:
                         self.opt_info['target_policy'].set_param_values(self.policy.get_param_values())
+                    update_freq_itr += 1
 
                 obs = next_obs
                 itr += 1
@@ -250,13 +256,21 @@ class DQN(RLAlgorithm, Serializable):
         target_policy = self.opt_info['target_policy']
 
         # target values ys. Each row is a sample so we need axis=1
-        _, action_info = target_policy.get_actions(next_observations)
-        target_qvalues = np.max(action_info['action_values'], axis=1)
-        targets = rewards +  self.discount * (1. - terminals) * target_qvalues
+        _, action_infos = target_policy.get_actions(next_observations)
+        target_qvalues = np.max(action_infos['action_values'], axis=1)
+        targets = rewards + (1. - terminals) * self.discount * target_qvalues
         flat_observations = self.env.observation_space.flatten_n(observations)
+
+        # _, my_qvalue_infos = self.policy.get_actions(observations)
+        # my_qvalues = my_qvalue_infos['action_values']
+        # my_qvalues = my_qvalues[np.arange(my_qvalues.shape[0]), actions]
 
         # f_train_policy updates the parameters of self.policy
         qf_loss, qvalues = f_train_policy(flat_observations, actions, targets)
+
+        # dubugging purposes
+        # np.testing.assert_allclose(qvalues, my_qvalues)
+        # print("Sum target policy weights after training {}".format(np.sum(np.abs(target_policy.get_param_values()))))
 
         # store the values for logging
         self.qf_loss_averages.append(qf_loss)
@@ -275,10 +289,18 @@ class DQN(RLAlgorithm, Serializable):
         # building network
         obs_var = self.env.observation_space.new_tensor_variable('obs', extra_dims=1)
         action_var = self.env.action_space.new_tensor_variable('action', extra_dims=1)
-        qval_var_all = self.policy.get_action_sym(obs_var)
+        _, qval_var_all_dict = self.policy.get_action_sym(obs_var)
+        qval_var_all = qval_var_all_dict["action_values"]
         qval_var = qval_var_all[TT.arange(qval_var_all.shape[0]), action_var]
-
-        loss_var = TT.mean(TT.square(target_var - qval_var))
+        #gradient clipping
+        diff = target_var - qval_var
+        if self.clip_gradient > 0:
+            quadratic_part = TT.minimum(abs(diff), self.clip_gradient)
+            linear_part = abs(diff) - quadratic_part
+            loss = 0.5 * TT.square(quadratic_part) + self.clip_gradient * linear_part
+        else:
+            loss = 0.5 * TT.square(diff)
+        loss_var = TT.mean(loss)
         params = self.policy.get_params(trainable=True)
         updates = self.update_method(loss_var, params)
 
@@ -298,8 +320,8 @@ class DQN(RLAlgorithm, Serializable):
         )
 
         self.opt_info = dict(
-            f_train_policy = f_train_policy,
-            target_policy = target_policy
+            f_train_policy=f_train_policy,
+            target_policy=target_policy
         )
 
     def evaluate(self, epoch, pool):
@@ -349,12 +371,12 @@ class DQN(RLAlgorithm, Serializable):
         self.qs_averages = []
         self.ys_averages = []
 
-        self.es_path_length=[]
-        self.es_path_returns=[]
+        self.es_path_length = []
+        self.es_path_returns = []
 
     def update_plot(self):
         if self.plot:
-            plotter.update_plot(self.policy, self.max_path_length)
+            plotter.update_plot(self.policy, self.epoch_length)
 
     def get_epoch_snapshot(self, epoch):
         return dict(

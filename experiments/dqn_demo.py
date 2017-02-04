@@ -36,9 +36,9 @@ def run_task(*_):
 
     policy = DeterministicConvPolicy(
         env_spec=env.spec,
-        conv_filters=(16, 32, 32),
-        conv_filter_sizes=(8, 4, 4),
-        conv_strides=(4, 4, 2),
+        conv_filters=(32, 64, 64),
+        conv_filter_sizes=(8, 4, 3),
+        conv_strides=(4, 2, 1),
         conv_pads=('valid', 'valid', 'valid'),
         hidden_sizes=[512],
         hidden_nonlinearity=NL.rectify,
@@ -49,7 +49,7 @@ def run_task(*_):
         env_spec=env.spec,
         eps_start=1.0,
         eps_final=0.1,
-        eps_itr_start=10000,  # 200,
+        eps_itr_start=0,  # 200,
         eps_itr_final=1000000,
     )
 
@@ -79,7 +79,7 @@ def run_task(*_):
         policy,
         es,
         n_epochs=n_epochs,
-        epoch_length=20000, #1000,
+        epoch_length=50000, #1000,
         batch_size=32,
         discount=0.99,
         replay_memory_size=1000000, #20000 #10^5=11gb
@@ -87,12 +87,12 @@ def run_task(*_):
         target_network_update_frequency=10000, #500, #10000,
         agent_history_length=agent_history_length,
         resized_shape=resized_shape,
-        eval_max_samples=50000,#10000,#50000,
-        eval_max_path_length=1000,#1000,s
+        eval_max_samples=100000,#10000,#50000,
+        eval_max_path_length=2000,#1000,s
         # plot=True,
     )
 
-    # dont forget to train your algorithm
+    # TODO: dont forget to train your algorithm
     algo_lite.train()
 
 
@@ -109,6 +109,6 @@ run_experiment_lite(
     use_gpu=True,  # TODO True
     # Specifies the seed for the experiment. If this is not provided, a random seed
     # will be used
-    seed=1,
+    seed=123,
     # plot=True,
 )

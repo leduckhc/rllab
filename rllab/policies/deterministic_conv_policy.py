@@ -8,6 +8,7 @@ import numpy as np
 import theano.tensor as TT
 import lasagne.layers as L
 import lasagne.nonlinearities as NL
+import lasagne.init as LI
 
 from rllab.spaces import Discrete, Box
 
@@ -23,6 +24,8 @@ class DeterministicConvPolicy(Policy, LasagnePowered, Serializable):
             hidden_sizes=[],
             hidden_nonlinearity=NL.rectify,
             output_nonlinearity=NL.linear,
+            hidden_W_init=LI.HeUniform(), hidden_b_init=LI.Constant(0.1),
+            output_W_init=LI.HeUniform(), output_b_init=LI.Constant(0.1),
             network=None):
         Serializable.quick_init(self, locals())
 
@@ -37,6 +40,8 @@ class DeterministicConvPolicy(Policy, LasagnePowered, Serializable):
                 hidden_sizes=hidden_sizes,
                 hidden_nonlinearity=hidden_nonlinearity,
                 output_nonlinearity=output_nonlinearity,
+                hidden_W_init=hidden_W_init, hidden_b_init=hidden_b_init,
+                output_W_init=output_W_init, output_b_init=output_b_init,
                 name="deterministic_conv_network"
             )
 
@@ -79,13 +84,12 @@ class DeterministicConvPolicy(Policy, LasagnePowered, Serializable):
         return actions, dict(action_values=values)
 
     def get_action_sym(self, obs_var):
-        flat_obs_var = obs_var.flatten(ndim=2)
-        return L.get_output(self._output_layer, flat_obs_var, deterministic=True)
-        # values_var = TT.reshape(values_var, (-1,))
-        # if isinstance(self._env_spec.action_space, Discrete):
-        #     return TT.argmax(values_var), dict(action_values=values_var)
-        # elif isinstance(self._env_spec.action_space, Box):
-        #     return values_var, dict(action_values=values_var)
-        # else:
-        #     raise NotImplementedError
+        # return L.get_output(self._output_layer, obs_var, deterministic=True)
+        network_output = L.get_output(self._output_layer, obs_var, deterministic=True)
+        if isinstance(self._env_spec.action_space, Discrete):
+            return TT.argmax(network_output, axis=1), dict(action_values=network_output)
+        elif isinstance(self._env_spec.action_space, Box):
+            return network_output, dict(action_values=network_output)
+        else:
+            raise NotImplementedError
 
