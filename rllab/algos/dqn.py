@@ -89,11 +89,6 @@ class DQN(RLAlgorithm, Serializable):
         eval_max_path_length : int
             Each rollout/path has max lengh. After this we will not restart epoch.
         target_network_update_frequency : int
-<<<<<<< 33d4b7a59e6eda50a33af9b4bbf6046776b88aaa
-=======
-        soft_target_tau : float
-            parameters of cur_policy == (1-tau)*cur_policy + tau*old_policy
->>>>>>> small fix dqn_demo
         update_method : str
             'rmsprop' or 'adam'
         update_method_kwargs : dict

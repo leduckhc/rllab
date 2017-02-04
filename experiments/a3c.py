@@ -26,6 +26,7 @@ class A3C(RLAlgorithm, Serializable):
             n_epochs=200,
             epoch_length=10000,
             t_max=5,
+            discount=0.99,
             vfunc_weight_decay=1e-3,
             vfunc_update_method=lasagne.updates.rmsprop,
             policy_weight_decay=1e-3,
@@ -42,6 +43,7 @@ class A3C(RLAlgorithm, Serializable):
         self.n_epochs = n_epochs
         self.epoch_length = epoch_length
         self.t_max = t_max
+        self.discount = discount
         self.vfunc_weight_decay = vfunc_weight_decay
         self.policy_weight_decay = policy_weight_decay
         self.vfunc_update_method = vfunc_update_method
