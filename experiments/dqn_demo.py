@@ -8,7 +8,7 @@ from rllab.envs.gym_env import GymEnv
 from rllab.envs.preprocess_env import PreprocessEnv
 from rllab.envs.sliding_mem_env import SlidingMemEnv
 from rllab.exploration_strategies.epsilon_strategy import EpsilonGreedyStrategy
-from rllab.misc.instrument import run_experiment_lite, stub
+from rllab.misc.instrument import run_experiment_lite
 from rllab.policies.deterministic_conv_policy import DeterministicConvPolicy
 
 env_name = 'SpaceInvaders-v0'
@@ -36,9 +36,9 @@ def run_task(*_):
 
     policy = DeterministicConvPolicy(
         env_spec=env.spec,
-        conv_filters=(16, 32, 32),
-        conv_filter_sizes=(8, 4, 4),
-        conv_strides=(4, 4, 2),
+        conv_filters=(32, 64, 64),
+        conv_filter_sizes=(8, 4, 3),
+        conv_strides=(4, 2, 1),
         conv_pads=('valid', 'valid', 'valid'),
         hidden_sizes=[512],
         hidden_nonlinearity=NL.rectify,
@@ -49,52 +49,54 @@ def run_task(*_):
         env_spec=env.spec,
         eps_start=1.0,
         eps_final=0.1,
-        eps_itr_start=10000,  # 200,
+        eps_itr_start=0,  # 200,
         eps_itr_final=1000000,
     )
 
-    # algo = DQN(
-    #     env,
-    #     policy,
-    #     es,
-    #     n_epochs=n_epochs,
-    #     epoch_length=20000,  # 1000,
-    #     batch_size=32,
-    #     discount=0.99,
-    #     replay_memory_size=1000000,  # 20000 #10^5=11gb
-    #     min_replay_memory_size=50000,  # 2000, #50000
-    #     target_network_update_frequency=10000,  # 500, #10000,
-    #     agent_history_length=agent_history_length,
-    #     resized_shape=resized_shape,
-    #     eval_max_samples=50000,  # 10000,#50000,
-    #     eval_max_path_length=1000,  # 1000,s
-    #     # plot=True,
-    # )
+    algo_lite = DQN(
+        env,
+        policy,
+        es,
+        n_epochs=n_epochs,
+        epoch_length=1000,  # 1000,
+        batch_size=2,
+        discount=0.99,
+        replay_memory_size=20000,  # 20000 #10^5=11gb
+        min_replay_memory_size=5000,  # 2000, #50000
+        target_network_update_frequency=500,  # 500, #10000,
+        agent_history_length=agent_history_length,
+        resized_shape=resized_shape,
+        eval_max_samples=5000,  # 10000,#50000,
+        eval_max_path_length=500,  # 1000,s
+        update_method='rmsprop',
+        update_method_kwargs=dict(
+            learning_rate=0.00025, rho=0.95, epsilon=1e-2),
+        # plot=True,
+    )
 
     algo = DQN(
         env,
         policy,
         es,
         n_epochs=n_epochs,
-        epoch_length=1000, #1000,
+        epoch_length=50000, #1000,
         batch_size=32,
         discount=0.99,
-        replay_memory_size=20000, #20000 #10^5=11gb
-        min_replay_memory_size=5000, #2000, #50000
-        target_network_update_frequency=500, #500, #10000,
+        replay_memory_size=1000000, #20000 #10^5=11gb
+        min_replay_memory_size=50000, #2000, #50000
+        target_network_update_frequency=10000, #500, #10000,
         agent_history_length=agent_history_length,
         resized_shape=resized_shape,
-        eval_max_samples=5000,#10000,#50000,
-        eval_max_path_length=500,#1000,s
-        update_method='rmsprop',
-        update_method_kwargs=dict(
-            learning_rate=0.00025 , rho=0.95, epsilon=1e-2),
+        eval_max_samples=100000,#10000,#50000,
+        eval_max_path_length=2000,#1000,s
         # plot=True,
     )
 
-    algo.train()
+    # TODO: dont forget to train your algorithm
+    algo_lite.train()
 
 
+# run experiment
 run_experiment_lite(
     run_task,
     exp_prefix=env_name,
@@ -107,6 +109,6 @@ run_experiment_lite(
     use_gpu=True,  # TODO True
     # Specifies the seed for the experiment. If this is not provided, a random seed
     # will be used
-    seed=1,
+    seed=123,
     # plot=True,
 )

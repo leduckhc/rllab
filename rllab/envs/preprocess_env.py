@@ -1,5 +1,6 @@
 import cv2
 import numpy as np
+
 from rllab.core.serializable import Serializable
 from rllab.envs.base import Step
 from rllab.envs.proxy_env import ProxyEnv
@@ -22,7 +23,6 @@ class PreprocessEnv(ProxyEnv, Serializable):
         self.new_shape = new_shape
         self.range = np.max(env.observation_space.high - env.observation_space.low)
         self.insert_extra_one_to_shape = insert_extra_one_to_shape
-
 
     def preprocess(self, obs):
         # scale down game image

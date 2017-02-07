@@ -1,6 +1,5 @@
 import argparse
 import os
-
 import joblib
 import matplotlib.pylab as plt
 import numpy as np
@@ -27,8 +26,9 @@ def save_plt_to_pdf(plt_c, log_file):
     plt_c : matplotlib.fig
     log_file : without extension
     """
-    extension = ".pdf"
-    log_file = os.path.join(analysis_log_dir, log_file + extension)
+    global analysis_log_dir
+
+    log_file = os.path.join(analysis_log_dir, log_file + '.pdf')
     with PdfPages(log_file) as pdf:
         for i in plt_c.get_fignums():
             fig = plt_c.figure(i)
@@ -117,6 +117,8 @@ parser = argparse.ArgumentParser()
 parser.add_argument('file', type=str,
                     help='Path to the snapshot file. Usually it is ".pkl" file')
 parser.add_argument('--env', type=str, help='Name of the environemtn')
+parser.add_argument('--visualize_conv', type=bool, default=True, help='Visualize convolution layer')
+parser.add_argument('--max_path_length', type=int, default=np.inf, help='Maximal path length ')
 args = parser.parse_args()
 
 analysis_log_dir = os.path.join('analysis', args.env)
@@ -139,23 +141,24 @@ with tf.Session() as sess:
     else:
         env = data['env']
 
-    path = rollout(env, policy, animated=False)
-    observations, actions, rewards = ext.extract(
-        path,
-        "observations", "actions", "rewards"
-    )
+    if args.visualize_conv:
+        path = rollout(env, policy, animated=False)
+        observations, actions, rewards = ext.extract(
+            path,
+            "observations", "actions", "rewards"
+        )
 
-    logger.log("Generating plots of networks")
-    conv_layer = L.get_all_layers(policy._output_layer)[2]
-    visualize_conv_weight(conv_layer, file_name='vis_weights')
-    path_length = len(observations)
-    some_indexes = np.linspace(0, path_length, 10, endpoint=False, dtype='int32')
-    for obs_ind in some_indexes:
-        obs = observations[obs_ind].reshape(1,4,84,84)
-        visualize_conv_activation(conv_layer, obs, file_name='vis_activations_%d' % obs_ind)
-    logger.log("Finished plotting")
+        logger.log("Generating plots of networks")
+        conv_layer = L.get_all_layers(policy._output_layer)[2]
+        visualize_conv_weight(conv_layer, file_name='vis_weights')
+        path_length = len(observations)
+        some_indexes = np.linspace(0, path_length, 10, endpoint=False, dtype='int32')
+        for obs_ind in some_indexes:
+            obs = observations[obs_ind].reshape(1,4,84,84)
+            visualize_conv_activation(conv_layer, obs, file_name='vis_activations_%d' % obs_ind)
+        logger.log("Finished plotting")
 
     while True:
-        path = rollout(env, policy, animated=True)
+        path = rollout(env, policy, animated=True, max_path_length=5000)
         if not query_yes_no('Continue simulation?'):
             break

@@ -1,14 +1,16 @@
 import multiprocessing
-import joblib.pickle as pickle
+import pickle
 import lasagne
 import theano.tensor as TT
 import numpy as np
+import time
 
 from experiments.a3c_lib import *
 from rllab.algos.base import RLAlgorithm
 from rllab.core.serializable import Serializable
 from rllab.misc import ext
 from rllab.misc import logger
+from rllab.misc import special
 from rllab.plotter import plotter
 from rllab.sampler import parallel_sampler
 from rllab.sampler.stateful_pool import singleton_pool, ProgBarCounter
@@ -25,11 +27,16 @@ class A3C(RLAlgorithm, Serializable):
             n_epochs=200,
             epoch_length=10000,
             t_max=5,
+            discount=0.99,
             vfunc_weight_decay=1e-3,
             vfunc_update_method=lasagne.updates.rmsprop,
             policy_weight_decay=1e-3,
             policy_update_method=lasagne.updates.rmsprop,
-            scale_reward=0.1):
+            eval_max_samples=100000,
+            eval_max_path_length=2000,
+            scale_reward=0.1,
+            plot=False,
+    ):
 
         Serializable.quick_init(self, locals())
 
@@ -41,11 +48,15 @@ class A3C(RLAlgorithm, Serializable):
         self.n_epochs = n_epochs
         self.epoch_length = epoch_length
         self.t_max = t_max
+        self.discount = discount
         self.vfunc_weight_decay = vfunc_weight_decay
         self.policy_weight_decay = policy_weight_decay
         self.vfunc_update_method = vfunc_update_method
         self.policy_update_method = policy_update_method
         self.scale_reward = scale_reward
+        self.eval_max_samples = eval_max_samples
+        self.eval_max_path_length = eval_max_path_length
+        self.plot = plot
 
         self.opt_info = None
 
@@ -65,7 +76,7 @@ class A3C(RLAlgorithm, Serializable):
 
         for epoch in range(self.n_epochs):
             logger.push_prefix('epoch %d | ' % epoch)
-            ogger.log('Training started')
+            logger.log('Training started')
 
             results = singleton_pool.run_each(
                 train_worker,
@@ -80,14 +91,16 @@ class A3C(RLAlgorithm, Serializable):
                 time.sleep(0.1)
                 with lock:
                     if g_counter.value >= threshold:
+                        logger.log('Training finished')
                         pbar.stop()
                         g_counter.value = 0
                         logger.log('Evaluating ...')
-                        self.evaluate(g_opt_info.value)
+                        self.evaluate(epoch, g_opt_info.value)
+                        logger.dump_tabular(with_prefix=False)
+                        logger.pop_prefix()
                         break
                     pbar.inc(g_counter.value - last_value)
                     last_value = g_counter.value
-
 
         self.terminate_task()
 
@@ -155,8 +168,28 @@ class A3C(RLAlgorithm, Serializable):
             target_vfunc=vfunc
         )
 
-    def evaluate(self, value):
-        pass
+    def evaluate(self, epoch, opt_info):
+        logger.log('Collecting samples for evaluation')
+
+        paths = parallel_sampler.sample_paths(
+            policy_params=opt_info['target_policy'],
+            max_samples=self.eval_max_samples,
+            max_path_length=self.eval_max_path_length,
+        )
+
+        average_discounted_return = np.mean(
+            [special.discount_return(path['rewards'], self.discount) for path in paths]
+        )
+        returns = [sum(path['rewards']) for path in paths]
+
+        logger.record_tabular('Epoch', epoch)
+        logger.record_tabular('AverageReturn', np.mean(returns))
+        logger.record_tabular('AverageDiscountedReturn', average_discounted_return)
+        logger.record_tabular('StdReturn', np.std(returns))
+        logger.record_tabular('MaxReturn', np.max(returns))
+        logger.record_tabular('MinReturn', np.min(returns))
+
+
 
     def terminate_task(self):
         parallel_sampler.terminate_task(self.scope)
