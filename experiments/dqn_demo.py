@@ -109,6 +109,6 @@ run_experiment_lite(
     use_gpu=True,  # TODO True
     # Specifies the seed for the experiment. If this is not provided, a random seed
     # will be used
-    seed=123,
+    seed=717836484,
     # plot=True,
 )
