@@ -102,13 +102,13 @@ run_experiment_lite(
     exp_prefix=env_name,
     exp_name="dqn",
     # Number of parallel workers for sampling.
-    n_parallel=1,
+    n_parallel=1432381111945066708,
     # Only keep the snapshot parameters for the last iteration
     snapshot_mode="all",
     mode="local",
     use_gpu=True,  # TODO True
     # Specifies the seed for the experiment. If this is not provided, a random seed
     # will be used
-    seed=123,
+    seed=717836484,
     # plot=True,
 )

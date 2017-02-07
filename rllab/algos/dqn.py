@@ -69,7 +69,7 @@ class DQN(RLAlgorithm, Serializable):
             max_path_length=400,
     ):
         """Deep Q-Network algorithm [1]_ [2]_
-        
+
         Parameters
         ----------
         env : gym_env.AtariGymEnv
