@@ -102,7 +102,7 @@ run_experiment_lite(
     exp_prefix=env_name,
     exp_name="dqn",
     # Number of parallel workers for sampling.
-    n_parallel=1432381111945066708,
+    n_parallel=1,
     # Only keep the snapshot parameters for the last iteration
     snapshot_mode="all",
     mode="local",
